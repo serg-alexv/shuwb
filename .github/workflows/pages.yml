@@ -29,8 +29,7 @@ jobs:
           set -euo pipefail
           deploy_dir="$(mktemp -d)"
           remote_url="https://github.com/${GITHUB_REPOSITORY}.git"
-          printf "machine github.com\nlogin x-access-token\npassword %s\n" "${GH_TOKEN}" > "${HOME}/.netrc"
-          chmod 600 "${HOME}/.netrc"
+          (umask 077 && printf "machine github.com\nlogin x-access-token\npassword %s\n" "${GH_TOKEN}" > "${HOME}/.netrc")
           trap 'rm -f "${HOME}/.netrc"' EXIT
           if git ls-remote --exit-code --heads "${remote_url}" gh-pages >/dev/null 2>&1; then
             git clone --depth 1 --branch gh-pages "${remote_url}" "${deploy_dir}"
@@ -58,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           page_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
-          max_attempts=60
+          max_attempts=30
           sleep_secs=10
           for attempt in $(seq 1 "${max_attempts}"); do
             status="$(curl -sS -L -o /dev/null -w '%{http_code}' "${page_url}" || true)"
