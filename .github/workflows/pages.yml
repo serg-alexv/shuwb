@@ -1,4 +1,7 @@
 name: Deploy dashboard to GitHub Pages
+# Prerequisite: GitHub Pages must be enabled manually in repo Settings → Pages,
+# with Source = "GitHub Actions". The GITHUB_TOKEN cannot create the Pages site
+# programmatically (API returns "Resource not accessible by integration").
 on:
   push:
     branches: [main]
@@ -26,9 +29,9 @@ jobs:
         run: |
           mkdir -p _site
           cp dashboard/index.html _site/index.html
+          # Embed the commit SHA so the dashboard can display data provenance
+          sed -i "s|__COMMIT_SHA__|${GITHUB_SHA}|g" _site/index.html
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

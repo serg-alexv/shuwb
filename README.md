@@ -53,3 +53,31 @@ No canonical fact enters the dataset without provenance. Every extracted fact mu
 ## Status
 
 Bootstrap phase. Schema v1.1 and provenance contracts are being established before bulk ingestion.
+
+## Quick start (local development)
+
+Requirements: Python ≥ 3.8, stdlib only (no third-party packages needed).
+
+```bash
+# Validate CSV data schemas
+make validate
+# or: python -m tests.validate_data
+
+# Run all tests
+make test
+
+# Serve the dashboard locally at http://localhost:8000
+make preview
+```
+
+### GitHub Pages deployment
+
+Pages must be **manually enabled** before the CI workflow can deploy:
+
+1. Go to **Settings → Pages** in this repository.
+2. Under *Source*, select **GitHub Actions**.
+3. Save. The next push to `main` will deploy the dashboard automatically.
+
+> The `GITHUB_TOKEN` cannot create a Pages site via the REST API  
+> (`Resource not accessible by integration`). Manual enablement is required once.
+

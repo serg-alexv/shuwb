@@ -1,0 +1,21 @@
+name: Validate data schemas
+on:
+  push:
+    paths:
+      - 'data/**'
+      - 'tests/**'
+      - '.github/workflows/validate.yml'
+  pull_request:
+    paths:
+      - 'data/**'
+      - 'tests/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run data validation and tests
+        run: make test
