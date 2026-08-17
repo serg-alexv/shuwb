@@ -1,0 +1,283 @@
+schema_version: "1.1"
+project: shuwb
+canonical_store: git
+
+controlled_values:
+  verification_status: [UNVERIFIED, SOURCE_VERIFIED, CROSS_VERIFIED, CONFLICTED, RETRACTED]
+  epistemic_state: [CONFIRMED, INFERRED, UNKNOWN, NOT_APPLICABLE, NOT_REACHED]
+  court_treatment: [ACCEPTED, REJECTED, PARTIAL, NOT_REACHED, PROCEDURALLY_BARRED, UNKNOWN]
+  materiality: [DISPOSITIVE, MATERIAL, SUPPORTING, INCIDENTAL, UNKNOWN]
+  instance_level: [FIRST, APPEAL, CASSATION, SUPREME_COURT, OTHER]
+  claim_result: [GRANTED, PARTIALLY_GRANTED, DENIED, ABANDONED, SETTLED, PENDING, UNKNOWN]
+  exposure_class: [PRE_CHANGE_INVENTORY, TRANSITIONAL, POST_CHANGE_INVENTORY, DISPUTED, UNKNOWN]
+
+entities:
+  dim_incident:
+    pk: incident_id
+    fields:
+      incident_id: string
+      incident_date: date
+      incident_type: string
+      title: string
+      description: string?
+      status: string
+      epistemic_state: enum:epistemic_state
+
+  dim_facility:
+    pk: facility_id
+    fields:
+      facility_id: string
+      facility_name: string
+      locality: string?
+      region: string?
+      country: string
+      latitude: number?
+      longitude: number?
+
+  fact_incident_facility:
+    pk: incident_facility_id
+    fields:
+      incident_facility_id: string
+      incident_id: fk:dim_incident
+      facility_id: fk:dim_facility
+      affected_area_sqm: number?
+      affected_inventory_estimate_rub: number?
+      affected_sellers_estimate: integer?
+      evidence_status: enum:epistemic_state
+
+  dim_seller:
+    pk: seller_id
+    fields:
+      seller_id: string
+      legal_name: string?
+      inn: string?
+      ogrn_or_ogrnip: string?
+      entity_type: string?
+
+  fact_contract_exposure:
+    pk: exposure_id
+    fields:
+      exposure_id: string
+      seller_id: fk:dim_seller
+      incident_id: fk:dim_incident
+      case_id: fk:dim_case?
+      shipment_or_batch_id: string?
+      offer_version_id: string?
+      goods_transferred_at: datetime?
+      offer_published_at: datetime?
+      offer_effective_at: datetime?
+      seller_acceptance_at: datetime?
+      incident_at: datetime?
+      exposure_class: enum:exposure_class
+
+  dim_case:
+    pk: case_id
+    fields:
+      case_id: string
+      incident_id: fk:dim_incident
+      filing_date: date?
+      case_status: string?
+      plaintiff_seller_id: fk:dim_seller?
+      defendant_id: string?
+      kad_url: string?
+
+  dim_party:
+    pk: party_id
+    fields:
+      party_id: string
+      legal_name: string
+      inn: string?
+      party_type: string?
+
+  case_party:
+    pk: case_party_id
+    fields:
+      case_party_id: string
+      case_id: fk:dim_case
+      party_id: fk:dim_party
+      role: string
+      representative_name: string?
+      law_firm: string?
+
+  fact_proceeding:
+    pk: proceeding_id
+    fields:
+      proceeding_id: string
+      case_id: fk:dim_case
+      instance_level: enum:instance_level
+      round_no: integer
+      court_id: string
+      opened_at: date?
+      closed_at: date?
+      result_code: string?
+
+  dim_judicial_act:
+    pk: act_id
+    fields:
+      act_id: string
+      proceeding_id: fk:fact_proceeding
+      act_type: string
+      decision_date: date?
+      publication_date: date?
+      effective_date: date?
+      source_id: fk:source_manifest
+
+  dim_issue:
+    pk: issue_id
+    fields:
+      issue_id: string
+      code: string
+      label: string
+      description: string?
+
+  fact_judicial_finding:
+    pk: finding_id
+    fields:
+      finding_id: string
+      act_id: fk:dim_judicial_act
+      issue_id: fk:dim_issue
+      finding: enum:court_treatment
+      materiality: enum:materiality
+      reason_code: string?
+      source_span: string?
+      provenance_id: fk:fact_provenance
+
+  dim_strategy:
+    pk: strategy_id
+    fields:
+      strategy_id: string
+      code: string
+      actor_scope: string?
+      family: string
+      label: string
+      description: string?
+
+  fact_strategy_use:
+    pk: strategy_use_id
+    fields:
+      strategy_use_id: string
+      act_id: fk:dim_judicial_act
+      case_id: fk:dim_case
+      actor_party_id: fk:dim_party?
+      actor_role: string
+      strategy_id: fk:dim_strategy
+      asserted: boolean
+      court_treatment: enum:court_treatment
+      materiality: enum:materiality
+      first_seen_date: date?
+      provenance_id: fk:fact_provenance
+
+  dim_evidence_type:
+    pk: evidence_type_id
+    fields:
+      evidence_type_id: string
+      code: string
+      label: string
+      provenance_class: string?
+
+  fact_evidence_use:
+    pk: evidence_use_id
+    fields:
+      evidence_use_id: string
+      act_id: fk:dim_judicial_act
+      case_id: fk:dim_case
+      evidence_type_id: fk:dim_evidence_type
+      offered_by_party_id: fk:dim_party?
+      admitted: boolean?
+      challenged: boolean?
+      relied_on_by_court: boolean?
+      fact_proved_issue_id: fk:dim_issue?
+      court_treatment: enum:court_treatment
+      provenance_id: fk:fact_provenance
+
+  fact_claim_component:
+    pk: claim_component_id
+    fields:
+      claim_component_id: string
+      case_id: fk:dim_case
+      proceeding_id: fk:fact_proceeding?
+      component_type: string
+      amount_claimed_rub: number?
+      amount_recognized_by_defendant_rub: number?
+      amount_proven_rub: number?
+      amount_awarded_rub: number?
+      quantity_claimed: number?
+      quantity_accepted: number?
+      unit_value_claimed_rub: number?
+      unit_value_accepted_rub: number?
+      result: enum:claim_result
+      provenance_id: fk:fact_provenance
+
+  fact_valuation:
+    pk: valuation_id
+    fields:
+      valuation_id: string
+      claim_component_id: fk:fact_claim_component
+      actor_role: string
+      valuation_method: string
+      base_amount_rub: number?
+      deductions_rub: number?
+      final_amount_rub: number?
+      formula_text: string?
+      provenance_id: fk:fact_provenance
+
+  fact_award:
+    pk: award_id
+    fields:
+      award_id: string
+      claim_component_id: fk:fact_claim_component
+      act_id: fk:dim_judicial_act
+      awarded_rub: number?
+      legal_fees_rub: number?
+      state_duty_rub: number?
+      interest_rub: number?
+      pretrial_paid_rub: number?
+      provenance_id: fk:fact_provenance
+
+  fact_citation:
+    pk: citation_id
+    fields:
+      citation_id: string
+      source_act_id: fk:dim_judicial_act
+      target_authority_type: string
+      target_authority_id: string
+      proposition_code: string?
+      stance: string?
+      citation_context: string?
+      provenance_id: fk:fact_provenance
+
+  source_manifest:
+    pk: source_id
+    fields:
+      source_id: string
+      source_url: string
+      source_type: string
+      title: string?
+      publisher_or_authority: string?
+      document_date: date?
+      retrieved_at: datetime
+      document_hash: string?
+      redistribution_status: string?
+
+  fact_provenance:
+    pk: provenance_id
+    fields:
+      provenance_id: string
+      source_id: fk:source_manifest
+      page_or_section: string?
+      paragraph_or_locator: string?
+      source_span: string?
+      extractor_type: string
+      extractor_name_version: string?
+      extracted_at: datetime
+      confidence: number?
+      verification_status: enum:verification_status
+      epistemic_state: enum:epistemic_state
+      verified_by: string?
+      verification_note: string?
+
+derived_metrics:
+  recovery_claim: "amount_awarded_rub / amount_claimed_rub"
+  recovery_proved: "amount_awarded_rub / amount_proven_rub"
+  quantity_acceptance: "quantity_accepted / quantity_claimed"
+  note: "Derived ratios are null when denominator is missing, zero, disputed or unverified. Cross-incident models must include cohort identity."
