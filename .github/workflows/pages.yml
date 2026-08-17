@@ -29,8 +29,11 @@ jobs:
           set -euo pipefail
           deploy_dir="$(mktemp -d)"
           remote_url="https://github.com/${GITHUB_REPOSITORY}.git"
-          auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
-          if git -c "http.https://github.com/.extraheader=${auth_header}" clone --depth 1 --branch gh-pages "${remote_url}" "${deploy_dir}"; then
+          printf "machine github.com\nlogin x-access-token\npassword %s\n" "${GH_TOKEN}" > "${HOME}/.netrc"
+          chmod 600 "${HOME}/.netrc"
+          trap 'rm -f "${HOME}/.netrc"' EXIT
+          if git ls-remote --exit-code --heads "${remote_url}" gh-pages >/dev/null 2>&1; then
+            git clone --depth 1 --branch gh-pages "${remote_url}" "${deploy_dir}"
             cd "${deploy_dir}"
           else
             cd "${deploy_dir}"
@@ -49,23 +52,27 @@ jobs:
             exit 0
           fi
           git commit -m "Deploy ${GITHUB_SHA}"
-          git -c "http.https://github.com/.extraheader=${auth_header}" push origin gh-pages
+          git push origin gh-pages
       - name: Verify deployed page returns HTTP 200
         shell: bash
         run: |
           set -euo pipefail
           page_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
-          for attempt in {1..60}; do
+          max_attempts=60
+          sleep_secs=10
+          for attempt in $(seq 1 "${max_attempts}"); do
             status="$(curl -sS -L -o /dev/null -w '%{http_code}' "${page_url}" || true)"
             if [ "${status}" = "200" ]; then
               exit 0
             fi
-            if [ "${status}" = "403" ] || [ "${status}" = "500" ] || [ "${status}" = "502" ] || [ "${status}" = "503" ] || [ "${status}" = "504" ]; then
+            if [ "${status}" = "403" ]; then
               echo "Non-retryable HTTP ${status} at ${page_url}"
               exit 1
             fi
-            echo "Attempt ${attempt}: HTTP ${status}; waiting for Pages publish"
-            sleep 10
+            echo "Attempt ${attempt}/${max_attempts}: HTTP ${status}; waiting ${sleep_secs}s for Pages publish"
+            if [ "${attempt}" -lt "${max_attempts}" ]; then
+              sleep "${sleep_secs}"
+            fi
           done
           echo "Failed to verify HTTP 200 at ${page_url}"
           exit 1
