@@ -1,0 +1,32 @@
+kind,code,family,label,description
+issue,CUSTODY,inventory,Custody / warehouse possession,Whether the goods were legally/factually in marketplace custody at the relevant time
+issue,QUANTITY,inventory,Quantity,How many units were proven to be present/lost
+issue,VALUATION,financial,Valuation basis,Which valuation basis is legally/evidentially accepted
+issue,COGS,financial,Cost of goods,Purchase/manufacturing cost and its proof
+issue,LOST_PROFIT,financial,Lost profit,Whether lost profit was claimed and sufficiently proven
+issue,CAUSATION,liability,Causation,Causal link between breach/event and claimed loss
+issue,CONTRACT_SCOPE,contract,Contract scope,Which contractual terms govern the relevant goods/relationship
+issue,FORCE_MAJEURE,liability,Force majeure,Application of force-majeure rules/contract clauses
+issue,RETROACTIVITY,contract,Retroactivity,Whether later contractual terms apply to earlier-transferred inventory
+issue,LIMITATION_OF_LIABILITY,contract,Limitation of liability,Validity/scope of contractual liability limitations
+issue,SET_OFF,financial,Set-off / deductions,Whether marketplace deductions or offsets are permissible
+strategy,VAL_RETAIL,valuation,Retail-price valuation,Values lost inventory using retail/site selling price
+strategy,VAL_COGS,valuation,COGS valuation,Values lost inventory using purchase/manufacturing cost
+strategy,VAL_DYNAMIC,valuation,Dynamic marketplace valuation,Uses turnover/discount/SPP or marketplace dynamic-price logic
+strategy,LEG_BAILMENT,liability,Storage/bailment qualification,Argues duties analogous to storage/bailment under applicable civil-law rules
+strategy,LEG_FORCE_MAJEURE,liability,Force-majeure position,Invokes or contests force majeure
+strategy,LEG_RETROACTIVITY,contract,Retroactivity position,Invokes or contests application of changed offer terms to earlier inventory
+strategy,WB_DEDUCTIONS,defense,Marketplace deductions,Defendant relies on contractual/calculation deductions
+strategy,WB_NO_TRANSFER,defense,No transfer / custody denial,Defendant argues goods were not received/present
+strategy,LOST_PROFIT_HISTORY,valuation,Historical-sales lost profit,Uses sales history/velocity/margin to support lost profit
+strategy,ADMISSION_RELIANCE,evidence,Marketplace admission reliance,Relies on marketplace-generated inventory/compensation records as admissions
+strategy,EXPERTISE_REQUEST,procedure,Expert examination request,Requests court/independent expertise on loss or valuation
+evidence,WB_REPORT,marketplace,Marketplace report,Marketplace-generated stock/compensation/nomenclature report
+evidence,ACCEPTANCE_ACT,logistics,Acceptance act,Formal warehouse/fulfillment acceptance record
+evidence,TRANSPORT_DOC,logistics,Transport document,Waybill/TTN/shipping proof
+evidence,UPD_SUPPLIER,accounting,Supplier UPD,Universal transfer document or supplier invoice evidence
+evidence,CUSTOMS_DECL,accounting,Customs declaration,Import/customs documentation supporting quantity/cost
+evidence,ERP_DATA,seller,Seller ERP data,1C/MoySklad or equivalent seller system records
+evidence,EXPERT_REPORT,expert,Expert/valuer report,Completed expert or valuation report; distinguish from requested expertise
+evidence,FIRE_AUTHORITY_ACT,authority,Fire/emergency authority act,Official fire/emergency/incident documentation
+evidence,BANK_PAYMENT,accounting,Bank/payment evidence,Payment records supporting acquisition cost
