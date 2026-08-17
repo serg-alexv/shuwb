@@ -1,0 +1,26 @@
+{
+  "dataset": "SHUS-2024 procedural chain pass 1",
+  "generated_from": "data/proceedings/discovery_procedural_chains_pass1.csv",
+  "verification_status": "DISCOVERED",
+  "cases_with_multi_act_chain": 4,
+  "act_observations": 9,
+  "instance_observations": {
+    "FIRST": 4,
+    "APPEAL": 4,
+    "CASSATION": 1,
+    "SUPREME_COURT": 0
+  },
+  "observed_appellate_outcomes": {
+    "AFFIRMED": 2,
+    "CHANGED_OR_VACATED": 2
+  },
+  "observed_cassation_outcomes": {
+    "VACATED_AND_REMANDED": 1
+  },
+  "interpretation_limits": [
+    "This is not an exhaustive procedural census.",
+    "Metrics are descriptive only and must not be reported as population reversal rates.",
+    "All observations remain DISCOVERED until checked against official KAD/court records.",
+    "A later remand round may exist and is not yet encoded for A41-22619/2024."
+  ]
+}
