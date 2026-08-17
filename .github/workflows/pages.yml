@@ -60,14 +60,24 @@ jobs:
           max_attempts=30
           sleep_secs=10
           for attempt in $(seq 1 "${max_attempts}"); do
-            status="$(curl -sS -L -o /dev/null -w '%{http_code}' "${page_url}" || true)"
-            if [ "${status}" = "200" ]; then
-              exit 0
+            if ! status="$(curl -sS -L -o /dev/null -w '%{http_code}' "${page_url}")"; then
+              status="000"
             fi
-            if [ "${status}" = "403" ]; then
-              echo "Non-retryable HTTP ${status} at ${page_url}"
-              exit 1
-            fi
+            case "${status}" in
+              200)
+                exit 0
+                ;;
+              401|403)
+                echo "Non-retryable HTTP ${status} at ${page_url}"
+                exit 1
+                ;;
+              4??)
+                if [ "${status}" != "404" ] && [ "${status}" != "429" ]; then
+                  echo "Non-retryable HTTP ${status} at ${page_url}"
+                  exit 1
+                fi
+                ;;
+            esac
             echo "Attempt ${attempt}/${max_attempts}: HTTP ${status}; waiting ${sleep_secs}s for Pages publish"
             if [ "${attempt}" -lt "${max_attempts}" ]; then
               sleep "${sleep_secs}"
