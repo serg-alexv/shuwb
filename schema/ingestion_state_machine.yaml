@@ -1,0 +1,118 @@
+version: 1.0
+name: kad_live_ingestion_state_machine
+
+states:
+  DISCOVERED:
+    description: Case or act found by public search/indexing.
+    public_default: true
+    canonical: false
+    next:
+      - KAD_SYNCED
+      - QUARANTINED_NON_FIRE
+      - FLAGGED_FOR_HUMAN_REVIEW
+
+  KAD_SYNCED:
+    description: Docket chronology and metadata captured from official/public court source.
+    public_default: true
+    canonical: false
+    required_fields:
+      - case_id
+      - source_id
+      - retrieved_at
+    next:
+      - ACT_INGESTED
+      - FLAGGED_FOR_HUMAN_REVIEW
+
+  ACT_INGESTED:
+    description: Judicial act text/PDF captured or linked with source locator.
+    public_default: true
+    canonical: false
+    required_fields:
+      - act_id
+      - source_id
+      - act_locator
+    next:
+      - LLM_EXTRACTED
+      - FLAGGED_FOR_HUMAN_REVIEW
+
+  LLM_EXTRACTED:
+    description: Structured extraction candidate produced by model according to strict schema.
+    public_default: false
+    canonical: false
+    required_fields:
+      - extraction_candidate_id
+      - extractor_model
+      - schema_version
+    next:
+      - RECONCILED
+      - FLAGGED_FOR_HUMAN_REVIEW
+
+  RECONCILED:
+    description: Candidate passed deterministic provenance, span, amount, date and vocabulary checks.
+    public_default: true
+    canonical: false
+    required_fields:
+      - reconciliation_report_id
+      - verification_status
+    next:
+      - OFFICIAL_RECORD_VERIFIED
+      - FLAGGED_FOR_HUMAN_REVIEW
+
+  OFFICIAL_RECORD_VERIFIED:
+    description: Official/court/KAD source record verified and eligible for canonical dataset.
+    public_default: true
+    canonical: true
+    required_fields:
+      - official_record_locator
+      - source_manifest_id
+      - verified_by
+      - verified_at
+    next:
+      - GOLD_EXTRACTED
+      - FLAGGED_FOR_HUMAN_REVIEW
+
+  GOLD_EXTRACTED:
+    description: Human-verified gold annotation for evaluation and calibration.
+    public_default: true
+    canonical: true
+    required_fields:
+      - gold_annotation_id
+      - reviewer_id
+      - reviewed_at
+    next:
+      - FLAGGED_FOR_HUMAN_REVIEW
+
+  QUARANTINED_NON_FIRE:
+    description: Likely unrelated marketplace dispute retained for audit/debug.
+    public_default: false
+    canonical: false
+    next:
+      - DISCOVERED
+      - FLAGGED_FOR_HUMAN_REVIEW
+
+  FLAGGED_FOR_HUMAN_REVIEW:
+    description: Contradiction, source failure, low confidence, ambiguous cohort or failed reconciliation.
+    public_default: true
+    canonical: false
+    next:
+      - DISCOVERED
+      - KAD_SYNCED
+      - ACT_INGESTED
+      - RECONCILED
+      - QUARANTINED_NON_FIRE
+
+transitions_require_reason: true
+canonical_write_requires:
+  - source_manifest_row
+  - provenance_locator
+  - verification_status
+  - schema_version
+  - git_commit_sha
+
+forbidden_transitions:
+  - from: DISCOVERED
+    to: OFFICIAL_RECORD_VERIFIED
+    reason: Cannot skip source sync, act ingestion and reconciliation.
+  - from: LLM_EXTRACTED
+    to: OFFICIAL_RECORD_VERIFIED
+    reason: Model output cannot self-verify.
