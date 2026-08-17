@@ -28,27 +28,43 @@ jobs:
         run: |
           set -euo pipefail
           deploy_dir="$(mktemp -d)"
-          cp -R _site/. "${deploy_dir}/"
+          remote_url="https://github.com/${GITHUB_REPOSITORY}.git"
+          auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)"
+          if git -c "http.https://github.com/.extraheader=${auth_header}" clone --depth 1 --branch gh-pages "${remote_url}" "${deploy_dir}"; then
+            cd "${deploy_dir}"
+          else
+            cd "${deploy_dir}"
+            git init
+            git checkout --orphan gh-pages
+            git remote add origin "${remote_url}"
+          fi
+          find "${deploy_dir}" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R "${GITHUB_WORKSPACE}/_site/." "${deploy_dir}/"
           touch "${deploy_dir}/.nojekyll"
-          cd "${deploy_dir}"
-          git init
-          git checkout -b gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
+          if git diff --cached --quiet; then
+            echo "No deployable changes."
+            exit 0
+          fi
           git commit -m "Deploy ${GITHUB_SHA}"
-          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git push --force origin gh-pages
+          git -c "http.https://github.com/.extraheader=${auth_header}" push origin gh-pages
       - name: Verify deployed page returns HTTP 200
         shell: bash
         run: |
           set -euo pipefail
           page_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
-          for _ in {1..30}; do
+          for attempt in {1..60}; do
             status="$(curl -sS -L -o /dev/null -w '%{http_code}' "${page_url}" || true)"
             if [ "${status}" = "200" ]; then
               exit 0
             fi
+            if [ "${status}" = "403" ] || [ "${status}" = "500" ] || [ "${status}" = "502" ] || [ "${status}" = "503" ] || [ "${status}" = "504" ]; then
+              echo "Non-retryable HTTP ${status} at ${page_url}"
+              exit 1
+            fi
+            echo "Attempt ${attempt}: HTTP ${status}; waiting for Pages publish"
             sleep 10
           done
           echo "Failed to verify HTTP 200 at ${page_url}"
