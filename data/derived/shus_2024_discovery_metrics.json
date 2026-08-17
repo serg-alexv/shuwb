@@ -1,0 +1,28 @@
+{
+  "incident_id": "SHUS-2024",
+  "generated_from": [
+    "data/cases/discovery_shus_2024.csv",
+    "data/acts/discovery_acts_shus_2024.csv",
+    "data/sources/source_manifest.csv"
+  ],
+  "status": "DISCOVERY_ONLY",
+  "metrics": {
+    "unique_case_ids": 24,
+    "discovery_act_observations": 24,
+    "stage_hint_counts": {
+      "FIRST": 20,
+      "APPEAL": 4,
+      "CASSATION": 0,
+      "SUPREME_COURT": 0
+    },
+    "official_record_verified_cases": 0,
+    "official_record_verified_acts": 0,
+    "financial_metrics_available": false
+  },
+  "interpretation_limits": [
+    "discovery_act_observations are not a complete procedural history",
+    "stage_hint_counts describe the currently linked discovery source, not the highest stage reached by each case",
+    "zero cassation observations means none are yet normalized in this discovery projection, not that no case reached cassation",
+    "financial and outcome rates must not be computed until claim-component extraction and provenance reconciliation are complete"
+  ]
+}
