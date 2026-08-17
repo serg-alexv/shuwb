@@ -114,7 +114,10 @@ class StateMachine:
                 f"Forbidden transition: {current} → {target}. {reason}"
             )
 
-        allowed = _FORWARD.get(current, []) + list(_SIDE_EXIT)
+        allowed = list(_FORWARD.get(current, []))
+        # Side-exit transitions are allowed from any non-terminal, non-side-exit state
+        if current not in _SIDE_EXIT and current != State.GOLD_EXTRACTED:
+            allowed += list(_SIDE_EXIT)
         if target not in allowed:
             raise TransitionError(
                 f"Invalid transition: {current} → {target}. "

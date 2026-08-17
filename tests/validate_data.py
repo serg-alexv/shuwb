@@ -94,9 +94,8 @@ def validate_cases(rows: list[dict], source_ids: set[str]) -> None:
                 f"cases row {i} (case_id={case_id}): "
                 f"official_record_verified must be 'true' or 'false', got '{official_record_verified}'"
             )
-
-        # If official_record_verified=true, provenance fields must be present
-        if official_record_verified == "true":
+        elif official_record_verified == "true":
+            # If official_record_verified=true, provenance fields must be present
             for field in OFFICIAL_PROVENANCE_FIELDS:
                 if not row.get(field, "").strip():
                     err(
@@ -106,9 +105,6 @@ def validate_cases(rows: list[dict], source_ids: set[str]) -> None:
 
 
 def main() -> int:
-    print(f"Validating {CASES_CSV} …")
-    print(f"Validating {SOURCES_CSV} …")
-
     if not CASES_CSV.exists():
         err(f"Missing file: {CASES_CSV}")
     if not SOURCES_CSV.exists():
@@ -117,6 +113,9 @@ def main() -> int:
     if errors:
         print(f"\n{len(errors)} error(s) found.", file=sys.stderr)
         return 1
+
+    print(f"Validating {CASES_CSV} …")
+    print(f"Validating {SOURCES_CSV} …")
 
     source_rows = load_csv(SOURCES_CSV)
     source_ids = validate_sources(source_rows)
