@@ -8,17 +8,12 @@ on:
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 concurrency:
   group: pages
   cancel-in-progress: true
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,12 +21,33 @@ jobs:
         run: |
           mkdir -p _site
           cp dashboard/index.html _site/index.html
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to gh-pages branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          deploy_dir="$(mktemp -d)"
+          cp -R _site/. "${deploy_dir}/"
+          touch "${deploy_dir}/.nojekyll"
+          cd "${deploy_dir}"
+          git init
+          git checkout -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "Deploy ${GITHUB_SHA}"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin gh-pages
+      - name: Verify deployed page returns HTTP 200
+        run: |
+          set -euo pipefail
+          page_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
+          for _ in {1..30}; do
+            status="$(curl -sS -L -o /dev/null -w '%{http_code}' "${page_url}" || true)"
+            if [ "${status}" = "200" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Failed to verify HTTP 200 at ${page_url}"
+          exit 1
